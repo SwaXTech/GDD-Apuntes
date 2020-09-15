@@ -63,3 +63,50 @@ USING mergeFuente f
 
 SELECT * FROM mergeDestino;
 
+/*
+Ahora realizaremos las mismas acciones pero agregaremos la cláusula OUTPUT al MERGE que nos
+permite loguear las operaciones que se realizaron durante la ejecución.
+Luego, podemos ejecutar un SELECT * FROM <modificaciones>, donde <modificaciones> puede ser
+una tabla física de la base de datos para almacenar logs, una variable local (@) de tipo table o una
+tabla temporal (#). $action devuelve la acción llevada a cabo, (en nuestro ejemplo, Insert, Update
+o Delete). También podríamos utilizar, además de $action, las variables de sesión de SQL inserted
+o deleted para recuperar las filas insertadas y/ actualizadas o eliminadas.
+En nuestro caso definiremos una variable del tipo TABLE
+Volvemos a ejecutar las sentencias de creación y carga de datos que ejecutamos
+anteriormente y luego ejecutamos lo siguiente:
+*/
+
+CREATE TABLE ##MergeLog(
+	operacion VARCHAR(10),
+	codigoAnt SMALLINT,
+	nombreAnt VARCHAR(30),
+	direccionAnt VARCHAR(50),
+	estadoAnt CHAR(1),
+	observacionesAnt VARCHAR(50),
+	codigoNew SMALLINT,
+	nombreNew VARCHAR(30),
+	direccionNew VARCHAR(50),
+	estadoNew CHAR(1),
+	observacionesNew VARCHAR(50)
+);
+
+MERGE mergeDestino d
+USING mergeFuente f
+	ON d.codigo = f.codigo
+	WHEN MATCHED AND d.direccion <> f.direccion THEN
+		UPDATE
+			SET d.direccion = f.direccion
+	WHEN NOT MATCHED BY TARGET THEN
+		INSERT (codigo, nombre, direccion, estado, observaciones)
+			VALUES (f.codigo, f.nombre, f.direccion, 'A', 'Nuevo')
+	WHEN NOT MATCHED BY SOURCE THEN
+		DELETE
+		OUTPUT
+			$action, DELETED.codigo, DELETED.nombre, DELETED.direccion, DELETED.estado,
+					 DELETED.observaciones,
+					 INSERTED.codigo, INSERTED.nombre, INSERTED.direccion, INSERTED.estado,
+					 INSERTED.observaciones
+		    INTO ##MergeLog;
+
+SELECT * FROM mergeDestino;
+SELECT * FROM ##MergeLog;
