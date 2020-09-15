@@ -14,10 +14,11 @@ comprado a cada fabricante sea mayor a 1500. El listado deberá estar ordenado po
 comprados de mayor a menor.
 */
 
-SELECT DISTINCT COUNT(*) AS Quantity, manu_code
-FROM products
+SELECT DISTINCT COUNT(DISTINCT stock_num) AS Quantity, manu_code
+FROM items
 GROUP BY manu_code
-ORDER BY COUNT(*) DESC
+HAVING SUM(unit_price * quantity) > 1500
+ORDER BY COUNT(DISTINCT stock_num) DESC
  
 
 /*
@@ -26,10 +27,11 @@ vendido (quantity x unit_price), para los fabricantes cuyo código tiene una “R” 
 el listado por código de fabricante y nro de producto.
 */
 
-SELECT manu_code, item_num, quantity, quantity * unit_price AS total_vendido
+SELECT manu_code, stock_num, COUNT(quantity), SUM(quantity * unit_price) AS total_vendido
 FROM items
 WHERE manu_code LIKE '_R%'
-ORDER BY manu_code, item_num
+GROUP BY manu_code, stock_num
+ORDER BY manu_code, stock_num
 
 
 /*Crear una tabla temporal OrdenesTemp que contenga las siguientes columnas: cantidad de órdenes por
@@ -38,12 +40,12 @@ la tabla temp OrdenesTemp en donde la primer fecha de compra sea anterior a '201
 ordenada por fechaUltimaCompra en forma descendente.
 */
 
-SELECT customer_num, (SELECT COUNT(customer_num)) AS quantity, MIN(order_date) AS fst_order, MAX(order_date) AS lst_order
+SELECT customer_num, COUNT(order_num) AS quantity, MIN(order_date) AS fst_order, MAX(order_date) AS lst_order
 INTO #ordenes_temp
 FROM orders
 GROUP BY customer_num
 
-SELECT * FROM #ordenes_temp
+SELECT * FROM #ordenes_temp WHERE fst_order < '2015-05-23 00:00:00.000' ORDER BY lst_order
 
 /*Consultar la tabla temporal del punto anterior y obtener la cantidad de clientes con igual cantidad de
 compras. Ordenar el listado por cantidad de compras en orden descendente
@@ -78,7 +80,7 @@ referidos cuya compañía empiece con una letra que este en el rango de ‘A’ a ‘L’.
 
 SELECT state, COUNT(customer_num)
 FROM customer
-WHERE company LIKE '[A-L]%'
+WHERE company LIKE '[A-L]%' AND customer_num_referedBy IS NOT NULL
 GROUP BY state
 
 /*Se desea obtener el promedio de lead_time por cada estado, donde los Fabricantes tengan una ‘e’ en
@@ -86,9 +88,8 @@ manu_name y el lead_time sea entre 5 y 20.*/
 
 SELECT manu_name, AVG(lead_time)
 FROM manufact
-WHERE manu_name LIKE '%e%'
+WHERE manu_name LIKE '%e%' AND lead_time BETWEEN 5 AND 20
 GROUP BY manu_name
-HAVING AVG(lead_time) BETWEEN 5 AND 20
 
 
 /*Se tiene la tabla units, de la cual se quiere saber la cantidad de unidades que hay por cada tipo (unit) que no

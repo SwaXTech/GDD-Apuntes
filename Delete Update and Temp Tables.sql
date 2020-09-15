@@ -66,6 +66,14 @@ SELECT * FROM #clientes WHERE (zipcode BETWEEN 94000 AND 94050) AND city LIKE 'M
 DELETE FROM #clientes 
 WHERE (zipcode BETWEEN 94000 AND 94050) AND city LIKE 'M%'
 
+/*
+Borrar de la tabla #clientes todos los clientes que no posean órdenes de compra en la tabla orders.
+(Utilizar un subquery).*/
+
+SELECT * FROM #clientes
+WHERE customer_num NOT IN (SELECT DISTINCT customer_num FROM orders)
+DELETE FROM #clientes
+WHERE customer_num NOT IN (SELECT DISTINCT customer_num FROM orders)
 
 /*Modificar los registros de la tabla #clientes cambiando el campo state por ‘AK’ y el campo address2 por
 ‘Barrio Las Heras’ para los clientes que vivan en el state 'CO'. Validar previamente la cantidad de
