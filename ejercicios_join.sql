@@ -36,24 +36,18 @@ contener: Número de orden (order_num), Número de Item (item_num), Descripción de
 (product_types.description), Código del fabricante (manu_code), Cantidad (quantity), precio total
 (unit_price*quantity) y Nombre del fabricante (manu_name).*/
 
-SELECT o.order_num			     AS NúmeroDeOrden, 
+SELECT i.order_num			     AS NúmeroDeOrden, 
 	   i.item_num				 AS NúmeroDeItem,
 	   pt.description			 AS Descripción,
-	   p.manu_code			     AS CódigoDeFabricante,
+	   i.manu_code			     AS CódigoDeFabricante,
 	   i.quantity				 AS Cantidad,
-	   p.unit_price * i.quantity AS PrecioTotal,
+	   i.unit_price * i.quantity AS PrecioTotal,
 	   m.manu_name				 AS NombreDeFabricante
 
-FROM orders o 
-	INNER JOIN items i 
-		ON o.order_num = i.order_num
-	INNER JOIN products p
-		ON (i.stock_num = p.stock_num AND i.manu_code = p.manu_code)
-	INNER JOIN product_types pt
-		ON i.stock_num = pt.stock_num
-	INNER JOIN manufact m
-		ON p.manu_code = m.manu_code
-WHERE o.order_num = 1004
+FROM  items i 
+	INNER JOIN product_types pt ON i.stock_num = pt.stock_num
+	INNER JOIN manufact m ON i.manu_code = m.manu_code
+WHERE i.order_num = 1004
 
 
 /*
@@ -92,10 +86,8 @@ Número de item (item_num), descripción de cada producto
 
 SELECT i.item_num, pt.description, i.quantity, (i.unit_price * i.quantity) AS precio_total
 FROM items i 
-	INNER JOIN products p		ON i.stock_num = p.stock_num AND i.manu_code = p.manu_code
-	INNER JOIN product_types pt ON p.stock_num = pt.stock_num
-	INNER JOIN orders o			ON i.order_num = o.order_num
-WHERE o.order_num = 1004
+	INNER JOIN product_types pt ON i.stock_num = pt.stock_num
+WHERE i.order_num = 1004
 
 /*
 8. Informar el nombre del fabricante (manu_name) y el tiempo de envío (lead_time) de los ítems de
@@ -124,7 +116,7 @@ separado por coma, Número de teléfono (phone) en formato (999) 999-9999. Ordenad
 apellido y nombre.
 */
 
-SELECT lname + ', ' + fname, '(999) ' + phone
+SELECT lname + ', ' + fname, '(' + SUBSTRING(phone, 1, 3) + ')' + ' ' + SUBSTRING(phone, 5,8) tel
 FROM customer
 ORDER BY lname, fname 
 
@@ -135,7 +127,7 @@ estado con descripción (sname) “California” y el código postal está entre 94000 
 Ordenado por fecha de embarque y, Apellido y nombre.
 */
 
-SELECT o.ship_date, c.lname + ', ' + c.fname AS nombre, COUNT(o.customer_num)
+SELECT o.ship_date, c.lname + ', ' + c.fname AS nombre, COUNT(o.order_num)
 FROM orders o INNER JOIN customer c ON o.customer_num = c.customer_num
 			  INNER JOIN state s ON c.state = s.state
 WHERE s.sname = 'California' AND 
@@ -170,3 +162,10 @@ FROM orders o INNER JOIN items i ON o.order_num = i.order_num
 WHERE order_date IS NOT NULL
 GROUP BY YEAR(order_date), MONTH(order_date)
 ORDER BY monto_total DESC
+
+
+SELECT CAST(YEAR(order_date) AS VARCHAR) + '/' + CAST(MONTH(order_date) AS VARCHAR) AS fecha, SUM(quantity) AS cantidad, SUM(unit_price * quantity) total
+FROM orders o JOIN items i ON (o.order_num = i.order_num)
+WHERE order_date IS NOT NULL
+GROUP BY YEAR(order_date), MONTH(order_date)
+ORDER BY total DESC
