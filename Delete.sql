@@ -10,3 +10,5 @@ FROM customer
 -- SIN WHERE
 
 -- No rompe porque hay referencias en otra tabla.
+
+
